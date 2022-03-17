@@ -42,6 +42,8 @@ def enter_card(player):
         card_no = input(f'Enter Card No. to Throw > ')
         if card_no.isnumeric() and 0 <= int(card_no) < len(cards_distribution[player]):
             return int(card_no)
+        else:
+            print('Please enter a valid card no. !!!')
 
 
 # Sorting Cards
