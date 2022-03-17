@@ -62,11 +62,11 @@ while True:
     thrown_cards.clear()
     session_count += 1
     for current_player in player_order(start_player):
+        print('\n\n')
         print(f'Player {current_player} :-')
         for index, card in enumerate(cards_distribution[current_player]):
             print(f'{index} - {cards_distribution[current_player][index]}')
         if card_follow:
-            print('\n\n')
             # thulla checking
             if not [card[0] for card in cards_distribution[current_player]].count(card_follow):
                 print('Give THULLA')
