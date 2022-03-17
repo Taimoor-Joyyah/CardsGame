@@ -1,8 +1,8 @@
-import os
 import random
 
 cards_no = ('2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A')
 cards_group = ('Diamond', 'Heart', 'Pan', 'Tree')
+rank = ('First', 'Second', 'Third', 'Forth')
 
 # Create and shuffle card deck
 cards_deck = [(group, no) for group in cards_group for no in cards_no]
@@ -24,15 +24,24 @@ cards_distribution = [[card for index, card in enumerate(cards_deck)
                        if index % no_of_players is player]
                       for player in range(no_of_players)]
 
-# Sorting Cards
-for player_cards in cards_distribution:
+player_rank = []
+
+
+def player_order(begin_player):
+    player_list = list(range(begin_player, no_of_players)) + list(range(0, begin_player))
+    for player in player_rank:
+        player_list.remove(player)
+    return player_list
+
+
+def sort_cards(cards):
     player_cards.sort(key=lambda x: cards_no.index(x[1]))
     player_cards.sort(key=lambda x: cards_group.index(x[0]))
 
 
-def player_order(start_player):
-    return list(range(start_player, no_of_players)) + list(range(0, start_player))
-
+# Sorting Cards
+for player_cards in cards_distribution:
+    sort_cards(player_cards)
 
 # Current Player
 start_player = None
@@ -41,22 +50,65 @@ for player_no, player_cards in enumerate(cards_distribution):
         if card == ('Pan', 'A'):
             start_player = player_no
 
+big_card = []
 thrown_cards = []
-throw_count = 0
+throws_in_session = 0
 session_count = 0
+thulla = False
+
+# Gameplay
 while True:
+    card_follow = ''
     thrown_cards.clear()
+    session_count += 1
     for current_player in player_order(start_player):
         print(f'Player {current_player} :-')
         for index, card in enumerate(cards_distribution[current_player]):
             print(f'{index} - {cards_distribution[current_player][index]}')
-        if throw_count:
-            card = cards_distribution[current_player][int(input(f'Enter Card no to Throw > '))]
+        if card_follow:
+            print('\n\n')
+            # thulla checking
+            if not [card[0] for card in cards_distribution[current_player]].count(card_follow):
+                print('Give THULLA')
+                thulla = True
+            else:
+                print(f'Following {card_follow} card')
+        if throws_in_session:
+            while True:
+                card = cards_distribution[current_player][int(input(f'Enter Card no to Throw > '))]
+                if card_follow:
+                    if card_follow == card[0]:
+                        break
+                    else:
+                        print(f'Please throw {card_follow} card.')
+                else:
+                    card_follow = card[0]
+                    big_card = [current_player, card[1]]
+                    break
         else:
             card = ('Pan', 'A')
-        throw_count += 1
-        thrown_cards.append([current_player, card])
+            card_follow = card[0]
+            big_card = [current_player, 'A']
+        throws_in_session += 1
+        thrown_cards.append((current_player, card))
         cards_distribution[current_player].remove(card)
+        if not cards_distribution[current_player]:
+            print(f'Player {current_player} is {rank[len(player_rank)]}')
+            player_rank.append(current_player)
         print(f'Card {card} is thrown by Player {current_player}')
-    session_count += 1
-    break
+        if cards_no.index(card[1]) > cards_no.index(big_card[1]):
+            big_card = [current_player, card[1]]
+        start_player = big_card
+        if thulla:
+            for card in thrown_cards:
+                cards_distribution[big_card[0]].append(card[1])
+            # sort
+            sort_cards(cards_distribution[big_card[0]])
+            break
+    if len(player_rank) == no_of_players:
+        break
+
+print('\n\n')
+print('GAME END')
+for index, player in enumerate(player_rank):
+    print(f'Player {player} is {rank[index]}')
