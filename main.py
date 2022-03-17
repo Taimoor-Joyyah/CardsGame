@@ -53,7 +53,7 @@ def enter_card(player):
 for player_cards in cards_distribution:
     sort_cards(player_cards)
 
-# Current Player
+# Start Player
 start_player = None
 for player_no, player_cards in enumerate(cards_distribution):
     for card in player_cards:
