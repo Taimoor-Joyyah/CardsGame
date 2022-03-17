@@ -25,6 +25,7 @@ cards_distribution = [[card for index, card in enumerate(cards_deck)
                       for player in range(no_of_players)]
 
 
+# Return play order of a session
 def player_order(begin_player):
     player_list = list(range(begin_player, no_of_players)) + list(range(0, begin_player))
     for player in player_rank:
@@ -32,11 +33,13 @@ def player_order(begin_player):
     return player_list
 
 
+# sort Card in double order
 def sort_cards(cards):
     cards.sort(key=lambda x: cards_no.index(x[1]))
     cards.sort(key=lambda x: cards_group.index(x[0]))
 
 
+# Enter card function
 def enter_card(player):
     while True:
         card_no = input(f'Enter Card No. to Throw > ')
