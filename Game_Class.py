@@ -1,20 +1,27 @@
 from Card_Classes import *
+import Server
 
 
 class Game:
     ranks = ('First', 'Second', 'Third', 'Forth')
 
     def __init__(self):
+        Server.connect_host_player()
         self.players = self.set_players()
+        self.allplayers = list(range(self.players))
+        Server.connect_players(self.players)
+        Server.send_message(self.allplayers, f'\n{self.players} players are playing')
+        self.initialization()
+        self.play()
 
-    # get no of players from host
+    # get no of players from host_player
     def set_players(self):
         while True:
-            players = input('Enter no of players : ')  # listen host for no of players input
+            players = Server.receive_message(Server.host_player, '\nEnter no of players : ')
             if players.isnumeric() and 2 <= int(players) <= 4:
                 return int(players)
             else:
-                print('No of Player must be 2, 3 or 4')  # return message to host for wrong input
+                Server.send_message([Server.host_player], '\nNo of Player must be 2, 3 or 4')
 
     # returns the order of play in each session
     def play_order(self, start_player):
@@ -31,7 +38,7 @@ class Game:
     # let player enter card no for card selection
     def enter_card(self, player):
         while True:
-            card_no = input(f'Enter Card No. to Throw > ')  # listen current player for card no input
+            card_no = Server.receive_message(player, '\nEnter Card No. to Throw > ')
             if card_no.isnumeric() and 0 <= int(card_no) < len(self.players_card_packs[player]):
                 card = self.players_card_packs[player][int(card_no)]
                 if not self.card_follow:
@@ -41,10 +48,11 @@ class Game:
                             self.winnerfollowthulla or self.firstsessionthulla):
                         return card
                     else:
-                        print(
-                            f'Please throw {self.card_follow} card.')  # return message to current player for wrong input
+                        # return message to current player for wrong input
+                        Server.send_message([player], f'\nPlease throw {self.card_follow} Card.')
             else:
-                print('Please enter a valid card no. !!!')  # return message to current player for wrong input
+                # return message to current player for wrong input
+                Server.send_message([player], '\nPlease enter a valid card no. !!!')
 
     # sort all players card pack before gameplay
     def players_card_sort(self):
@@ -65,13 +73,13 @@ class Game:
             if self.card_follow:
                 if self.isthulla(player):
                     self.thulla = True
-                    print(f'\nGive THULLA to Player {self.big_card[0]} !!!')  # return message to current player
+                    Server.send_message([player], f'\nGive THULLA to Player {Server.nicknames[self.big_card[0]]} !!!')
                 elif self.iswinnerfollowthulla(player) and self.isfirstsessionthulla(player):
                     self.winnerfollowthulla = True
                     self.firstsessionthulla = True
-                    print('Throw any card')  # return message to current player
+                    Server.send_message([player], '\nThrow any card')
                 else:
-                    print(f'\nFollowing {self.card_follow} card')  # return message to current player
+                    Server.send_message([player], f'\nFollowing {self.card_follow} Card')
             card = self.enter_card(player)
             if not self.card_follow:
                 self.card_follow = card.suit
@@ -84,6 +92,7 @@ class Game:
     def iswon(self, player):
         return not self.players_card_packs[player]
 
+    # check if suit exist in player card pack
     def suit_exist(self, player):
         return [card.suit for card in self.players_card_packs[player]].count(self.card_follow)
 
@@ -91,9 +100,11 @@ class Game:
     def isthulla(self, player):
         return not self.suit_exist(player) and self.session_count
 
+    # check if winner is followed and on thulla
     def iswinnerfollowthulla(self, player):
         return self.card_follow and not self.suit_exist(player) and self.ranking.count(self.thrown_cards[0])
 
+    # check if player getting thulla on first session
     def isfirstsessionthulla(self, player):
         return not self.session_count and self.card_follow and not self.suit_exist(player)
 
@@ -108,14 +119,13 @@ class Game:
     # plays session of gameplay
     def play_session(self):
         for player in self.play_order(self.start_player):
-            print('----------------------------------------')
-            print(f'\nPlayer {player} is Playing')  # return message to all players
-            print(self.players_card_packs[player])  # return cards to current player
+            Server.send_message(self.allplayers, '--------------------------------------------------')
+            Server.send_message(self.allplayers, f'\n{Server.nicknames[player]} is Playing')
+            Server.send_message([player], str(self.players_card_packs[player]))
             card = self.throw_card(player)
-            print(f'\nCard {card} is thrown by Player {player}')  # return message to all players
+            Server.send_message(self.allplayers, f'\n{Server.nicknames[player]} has thrown Card {card}')
             if self.iswon(player):
-                print(
-                    f'\nPlayer {player} is {self.ranks[len(self.ranking)]} -------------------->>>>>>>>>>>>>>>>>>>>')  # return message to all players
+                Server.send_message(self.allplayers, f'\n{Server.nicknames[player]} is {self.ranks[len(self.ranking)]}')
                 self.ranking.append(player)
                 self.players_playing.remove(player)
             elif card_ranks.index(card.rank) > card_ranks.index(self.big_card[1]) and not self.thulla:
@@ -124,6 +134,8 @@ class Game:
             if self.winnerfollowthulla:
                 break
             if self.thulla:
+                Server.send_message(self.allplayers, f'{Server.nicknames[self.big_card[0]]}'
+                                                     f' got THULLA by {Server.nicknames[player]}')
                 for thrown_card in self.thrown_cards:
                     self.players_card_packs[self.big_card[0]].add_card(thrown_card[1])
                 self.players_card_packs[self.big_card[0]].sort_cards()
@@ -151,9 +163,9 @@ class Game:
             self.thulla = False
             self.winnerfollowthulla = False
             self.firstsessionthulla = False
-            print('----------------------------------------')
-            print('----------------------------------------')
-            print(f'\nSession {self.session_count}')  # return message to all players
+            Server.send_message(self.allplayers, '--------------------------------------------------')
+            Server.send_message(self.allplayers, '--------------------------------------------------')
+            Server.send_message(self.allplayers, f'\nSession {self.session_count}')
             self.play_session()
             self.session_count += 1
             if self.islastplayer():
@@ -161,12 +173,13 @@ class Game:
                     if not self.ranking.count(item):
                         self.ranking.append(item)
                 break
-        print(self.end_stats())  # return end statistics to all players
+        Server.send_message(self.allplayers, '--------------------------------------------------')
+        Server.send_message(self.allplayers, str(self.end_stats()))
 
     # return ending statistics to all players
     def end_stats(self):
-        stat_display = '\n\n----------------------------------------'
+        stat_display = ''
         stat_display += 'GAME END Statistics'
         for index, player in enumerate(self.ranking):
-            stat_display += f'\nPlayer {player} is {self.ranks[index]}'
+            stat_display += f'\n{Server.nicknames[player]} is {self.ranks[index]}'
         return stat_display
