@@ -38,16 +38,17 @@ def connect_players(players):
 def send_message(players, message):
     for player in players:
         clients[player].socket.send('0'.encode())
-        if clients[player].socket.recv(1024).decode().isnumeric():
+        if clients[player].socket.recv(1024).decode() == '3':
             clients[player].socket.send(message.encode())
+            clients[player].socket.recv(1024).decode()
 
 
 def receive_message(player, message):
     print(f'Listening player {nicknames[player]}....')
     clients[player].socket.send('1'.encode())
-    if clients[player].socket.recv(1024).decode().isnumeric():
+    if clients[player].socket.recv(1024).decode() == '3':
         clients[player].socket.send(message.encode())
-    return clients[player].socket.recv(1024).decode()
+        return clients[player].socket.recv(1024).decode()
 
 
 def close_connections():
