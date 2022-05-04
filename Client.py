@@ -12,11 +12,10 @@ def validinput(prompt):
 
 s = socket.socket()
 
-# address = validinput('Enter Host Address : ')
-# port = int(validinput('Enter Host Port : '))
-#
-# s.connect((address, port))
-s.connect(('127.0.0.1', 40674))
+address = validinput('Enter Host Address : ')
+port = int(validinput('Enter Host Port : '))
+
+s.connect((address, port))
 
 s.send(validinput('Enter nickname : ').encode())
 
